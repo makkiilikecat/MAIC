@@ -1,10 +1,9 @@
 package com.makkii.maic;
 
-import static org.bukkit.Bukkit.getLogger;
+public enum PerformanceTest {
+    ;
 
-public class PerformanceTest {
-
-    public static void longStringTable(String string, int length){
+    public static void longStringTable(String string, int length) {
 
         long startTime = System.nanoTime();
         // 全体コメントアウトでメモリ4.7GB
@@ -33,6 +32,5 @@ public class PerformanceTest {
         //if (string.length() == 100) getLogger().info("");     // ダミー　コンパイラがtoStringをなくさないようにする、念の為
         //getLogger().info("--------------length: " + testStringList.length);
         //getLogger().info("Time: " +(endTime-startTime)/1000/1000);
-        return ;
     }
 }

@@ -2,7 +2,8 @@ package com.makkii.maic;
 
 import java.util.List;
 
-public class Utils {
+public enum Utils {
+    ;
 
 
     //二次元配列をソフトマックス関数でノーマライズする
@@ -66,7 +67,8 @@ public class Utils {
 
         return result;
     }
-    public static float calculateLoss(float[][] output,  List<Integer> batchWordIds) {
+
+    public static float calculateLoss(float[][] output, List<Integer> batchWordIds) {
         //本来であれば、交差エントロピー誤差を用いるが、
         //出力の次元と、教師データの形式が異なるため、今回は省略
         return 0;
@@ -77,6 +79,7 @@ public class Utils {
         //今回は省略
         return null;
     }
+
     public static void updateParameters(float[][] gradients) {
         //本来的には、勾配を用いて、重み行列、バイアス、埋め込み行列を更新する
         //例：

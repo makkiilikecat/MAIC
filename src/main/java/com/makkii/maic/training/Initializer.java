@@ -3,16 +3,16 @@ package com.makkii.maic.training;
 import java.util.Arrays;
 import java.util.Random;
 
-import static com.makkii.maic.training.TrainManager.*;
+import static com.makkii.maic.AIParams.*;
 
 public enum Initializer {
     ;
 
     public static void initializeModel() {
         // 埋め込み行列の初期化 (ランダムな値で)
-        embeddingMatrix = new float[vocabulary.size()][DIMENSION];
+        embeddingMatrix = new float[wordSize][DIMENSION];
         Random random = new Random();
-        for (int i = 0; i < vocabulary.size(); i++) {
+        for (int i = 0; i < wordSize; i++) {
             for (int j = 0; j < DIMENSION; j++) {
                 embeddingMatrix[i][j] = (float) (random.nextGaussian() * 0.01); // 小さな値で初期化
             }
@@ -37,7 +37,7 @@ public enum Initializer {
         initializeBiases(mppBiases2, random);
     }
 
-     public static void initializeWeights(float[][][] weights, Random random) {
+    public static void initializeWeights(float[][][] weights, Random random) {
         for (int i = 0; i < weights.length; i++) {
             for (int j = 0; j < weights[i].length; j++) {
                 for (int k = 0; k < weights[i][j].length; k++) {
