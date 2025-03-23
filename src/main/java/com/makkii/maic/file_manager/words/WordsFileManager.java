@@ -109,7 +109,7 @@ public enum WordsFileManager {
 
     //WordsFileManagerをTrainManagerクラスで使うためのメソッド
     public static void loadWordsFile(File filePath) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(FileManager.aiWordsFile))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(FileManager.ai_WordsFile))) {
             String line = reader.readLine(); //1行しかないことを想定
             if (line != null) {
                 String[] tokens = line.split(",");

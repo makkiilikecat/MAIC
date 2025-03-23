@@ -2,16 +2,11 @@ package com.makkii.maic.file_manager.words;
 
 import com.makkii.maic.KuromojiTokenizer;
 import com.makkii.maic.file_manager.FileManager;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,9 +16,6 @@ public enum WordsCreater {
     ;
 
     public static void main() {
-
-        // 語彙リストがすでに存在していたらrequireされない
-        if (!FileManager.requireWordsFile) return;
 
         /*try {  // 1. XMLファイルを文字列として読み込む
             StringBuilder contentBuilder = new StringBuilder();
@@ -90,25 +82,29 @@ public enum WordsCreater {
         }*/
         try {
             // 1. XMLファイルを文字列として読み込む
-            StringBuilder contentBuilder = new StringBuilder();
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(Files.newInputStream(FileManager.aiDatabaseFile.toPath()), StandardCharsets.UTF_8))) {
-                String sCurrentLine;
-                while ((sCurrentLine = br.readLine()) != null) {
-                    contentBuilder.append(sCurrentLine).append("\n");
-                }
-            }
+            //StringBuilder contentBuilder = new StringBuilder();
+            //try (BufferedReader br = new BufferedReader(new InputStreamReader(Files.newInputStream(FileManager.aiDatabaseFile.toPath()), StandardCharsets.UTF_8))) {
+            //    String sCurrentLine;
+            //    while ((sCurrentLine = br.readLine()) != null) {
+            //        contentBuilder.append(sCurrentLine).append("\n");
+            //    }
+            //}
 
             // 2. 擬似的なルート要素で囲む
-            String xmlContent = "<root>\n" + contentBuilder + "\n</root>";
+            //String xmlContent = "<root>\n" + contentBuilder + "\n</root>";
+            //getLogger().info("[MAIC] " + xmlContent);
 
             // 3. 文字列からDocumentオブジェクトを作成
-            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            Document doc = dBuilder.parse(new ByteArrayInputStream(xmlContent.getBytes(StandardCharsets.UTF_8)));
-            doc.getDocumentElement().normalize();
+            //DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            //DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            //Document doc = dBuilder.parse(new ByteArrayInputStream(xmlContent.getBytes(StandardCharsets.UTF_8)));
+            //doc.getDocumentElement().normalize();
 
             // 以降は元のコードと同じ（<doc>要素の処理）
-            NodeList nList = doc.getElementsByTagName("doc");
+            //NodeList nList = doc.getElementsByTagName("doc");
+
+            //getLogger().info("[MAIC] " + FileManager.dataBaseNodeList.item(5).getTextContent());
+
             Set<String> uniqueWords = new HashSet<>();
 
             // 毎回インスタンス生成するとメモリ消費が増えるためここで生成
@@ -117,7 +113,7 @@ public enum WordsCreater {
             //String combinedText;
             //Node nNode;
             //Element eElement;
-            int nListLength = nList.getLength();
+            //int nListLength = nList.getLength();
 
             /*
             for (int temp = 0; temp < nListLength; temp++) {
@@ -149,16 +145,18 @@ public enum WordsCreater {
             }
             */
 
-            getLogger().info("[MAIC] 学習元データをトークン化しています...");
+            getLogger().info("[MAIC] " + FileManager.databaseNodeLength + "件のページをトークン化中...");
 
             int lastParcentage = 1;
-            for (int temp = 0; temp < nListLength; temp++) {
-                if ((int) (temp / nListLength * 100) != lastParcentage) {
-                    lastParcentage = temp / nListLength * 100;
-                    getLogger().info("[MAIC] 進捗: " + (int) (temp / nListLength * 100) + "% " + temp + "/" + nListLength);
+            for (int temp = 0; temp < FileManager.databaseNodeLength; temp++) {
+                if ((int) (temp / FileManager.databaseNodeLength * 100) != lastParcentage) {
+                    lastParcentage = temp / FileManager.databaseNodeLength * 100;
+                    getLogger().info("[MAIC] 進捗: " +
+                            (int) (temp / FileManager.databaseNodeLength * 100) + "% " +
+                            temp + "/" + FileManager.databaseNodeLength);
                 }
 
-                Node nNode = nList.item(temp);
+                Node nNode = FileManager.dataBaseNodeList.item(temp);
                 if (nNode.getNodeType() == Node.ELEMENT_NODE) {
                     Element eElement = (Element) nNode;
                     String title = eElement.getAttribute("title");
@@ -166,7 +164,7 @@ public enum WordsCreater {
                     // StringBuilder を使用して combinedText を構築
                     StringBuilder combinedText = new StringBuilder(title.length() + 1024); // content のおおよその長さを加える
                     combinedText.append(title);
-                    combinedText.append('\n');
+                    //combinedText.append('\n');
 
                     // content 内の不要な空白と改行を削除しながら combinedText に追加
                     NodeList children = eElement.getChildNodes();
@@ -190,7 +188,7 @@ public enum WordsCreater {
                         }
                     }
 
-                    int maxChunkSize = 10;
+                    int maxChunkSize = 1000000;
                     String chunkSplitText = combinedText.toString();
                     for (int i = 0; i < chunkSplitText.length(); i += maxChunkSize) {
                         Collection<String> tokens = KuromojiTokenizer.tokenize(
@@ -212,21 +210,21 @@ public enum WordsCreater {
 
             getLogger().info("[MAIC] 並べ替えが終了しました。" + FileManager.AI_WORDS_FILE_NAME + "として保存しています...");
 
-            try (PrintWriter writer = new PrintWriter(FileManager.aiWordsFile, "UTF-8")) {
+            try (PrintWriter writer = new PrintWriter(FileManager.ai_WordsFile, "UTF-8")) {
                 // 不要な要素のセットを作成
-                //Set<String> unwantedChars = new HashSet<>(
-                //        Arrays.asList(" ", "　", "\n", "\r", "\t", "\\n", "\\r", "\\t")
-                //); // 全角空白、CR, LF, タブ
+                Set<String> unwantedChars = new HashSet<>(
+                        Arrays.asList(" ", "　", "\n", "\r", "\t", "\\n", "\\r", "\\t")
+                ); // 全角空白、CR, LF, タブ
 
                 // HashSet から不要な要素を削除
-                sortedWords.remove(",");
-                //String result = String.join(",", sortedWords);
-                //writer.println(result);
+                sortedWords.remove(unwantedChars);
+                sortedWords.remove(",");    // 区切り文字なので削除
 
                 // String.join() で結合した後、replaceAll() で不要な文字を削除
-                //String result = String.join(",", sortedWords)
-                //        //[]で囲むことですべての不要文字に対してor条件でマッチング
-                //        .replaceAll("[" + String.join("", unwantedChars) + "]", "");
+                String result = String.join(",", sortedWords)
+                        //[]で囲むことですべての不要文字に対してor条件でマッチング
+                        .replaceAll("[" + String.join("", unwantedChars) + "]", "");
+                //.replaceAll(String.join("", unwantedChars), "");
 
                 writer.print(sortedWords); // println() ではなく print() を使用. println()だと最後に改行が入ってしまう。
             } catch (FileNotFoundException e) {

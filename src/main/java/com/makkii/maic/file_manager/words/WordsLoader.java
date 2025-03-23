@@ -1,6 +1,5 @@
 package com.makkii.maic.file_manager.words;
 
-import com.makkii.maic.AIParams;
 import com.makkii.maic.file_manager.FileManager;
 
 import java.io.IOException;
@@ -26,7 +25,7 @@ public enum WordsLoader {
     public static void loadWords() throws IOException {
         // 同期化されたLinkedHashMapを作成
         AtomicInteger index = new AtomicInteger(0); //インデックスをAtomicIntegerにする
-        List<String> lines = Files.readAllLines(FileManager.aiWordsFile.toPath());
+        List<String> lines = Files.readAllLines(FileManager.ai_WordsFile.toPath());
 
         lines.stream()
                 .flatMap(line -> java.util.Arrays.stream(line.split(","))) // カンマで分割
@@ -34,10 +33,14 @@ public enum WordsLoader {
                 .filter(word -> !word.isEmpty()) // 空文字列は除外
                 .forEach(word -> {
                     int currentIndex = index.getAndIncrement();
-                    indexToWord.put(currentIndex, word);
-                    wordToIndex.put(word, currentIndex);
+                    if (currentIndex < 500) {  // 仮で語彙数を5000に制限
+                        indexToWord.put(currentIndex, word);
+                        wordToIndex.put(word, currentIndex);
+                    } else {
+                        return;
+                    }
                 });
-        wordSize = indexToWord.size();
+        wordSize = Math.min(indexToWord.size(), 500);
     }
 
     public static String getWord(int index) {
@@ -45,7 +48,7 @@ public enum WordsLoader {
     }
 
     public static Integer getIndex(String word) {
-        return wordToIndex.get(word);
+        return wordToIndex.getOrDefault(word, -1);
     }
 
     //public static void main(String[] args) throws IOException {

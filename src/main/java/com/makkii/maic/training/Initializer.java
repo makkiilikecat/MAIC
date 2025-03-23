@@ -9,12 +9,24 @@ public enum Initializer {
     ;
 
     public static void initializeModel() {
+
         // 埋め込み行列の初期化 (ランダムな値で)
         embeddingMatrix = new float[wordSize][DIMENSION];
+        unEmbeddingMatrix = new float[DIMENSION][wordSize];
+        // He の初期化の場合はこっち
+        // float stddev = (float) Math.sqrt(2.0 / wordSize);
+        // Xavier/Glorot の初期化(標準偏差を計算)
+        float stddev = (float) Math.sqrt(2.0 / (wordSize + DIMENSION));
+
         Random random = new Random();
+
         for (int i = 0; i < wordSize; i++) {
             for (int j = 0; j < DIMENSION; j++) {
-                embeddingMatrix[i][j] = (float) (random.nextGaussian() * 0.01); // 小さな値で初期化
+                // 小さな値で初期化
+                //embeddingMatrix[i][j] = (float) (random.nextGaussian() * 0.01);
+                // 正規分布に従う乱数で初期化
+                embeddingMatrix[i][j] = (float) (random.nextGaussian() * stddev);
+                unEmbeddingMatrix[j][i] = (float) (random.nextGaussian() * stddev);
             }
         }
 
@@ -31,6 +43,7 @@ public enum Initializer {
         initializeWeights(attentionWeightsQ, random);
         initializeWeights(attentionWeightsK, random);
         initializeWeights(attentionWeightsV, random);
+
         initializeWeights(mppWeights1, random);
         initializeBiases(mppBiases1, random);
         initializeWeights(mppWeights2, random);
