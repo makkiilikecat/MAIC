@@ -1,54 +1,53 @@
 package com.makkii.maic;
 
-import java.util.List;
+import java.util.Arrays;
 
 public enum Utils {
     ;
 
 
     //二次元配列をソフトマックス関数でノーマライズする
-    public static float[][] softMax2D(float[][] matrix) {
+    public static void softMax2D(double[][] matrix) {
         int rows = matrix.length;
         int cols = matrix[0].length;
-        float[][] result = new float[rows][cols];
-        float maxVal = Float.NEGATIVE_INFINITY;
+        //double[][] result = new double[rows][cols];
+        double maxVal = Double.NEGATIVE_INFINITY;
 
         // 各行の最大値を見つける
-        for (int i = 0; i < rows; i++) {
+        for (double[] doubles : matrix) {
             for (int j = 0; j < cols; j++) {
-                if (matrix[i][j] > maxVal) {
-                    maxVal = matrix[i][j];
+                if (doubles[j] > maxVal) {
+                    maxVal = doubles[j];
                 }
             }
         }
 
         // ソフトマックス関数を計算する
-        float sum = 0.0f;
+        double sum = 0.0f;
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                result[i][j] = (float) Math.exp(matrix[i][j] - maxVal);
-                sum += result[i][j];
+                matrix[i][j] = Math.exp(matrix[i][j] - maxVal);
+                sum += matrix[i][j];
             }
         }
 
         // 合計で割って正規化する
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                result[i][j] /= sum;
+                matrix[i][j] /= sum;
             }
         }
 
-        return result;
+        return;
     }
 
     // Softmax 関数 (ベクトル用)
-    public static float[] softMax(float[] vector) {
-        float[] result = new float[vector.length];
-        float sum = 0.0f;
-        float maxVal = Float.NEGATIVE_INFINITY;
+    public static void softMax(double[] vector) {
+        double sum = 0.0f;
+        double maxVal = Double.NEGATIVE_INFINITY;
 
         // 最大値を見つける
-        for (float v : vector) {
+        for (double v : vector) {
             if (v > maxVal) {
                 maxVal = v;
             }
@@ -56,34 +55,54 @@ public enum Utils {
 
         // Softmax 計算
         for (int i = 0; i < vector.length; i++) {
-            result[i] = (float) Math.exp(vector[i] - maxVal);
-            sum += result[i];
+            vector[i] = Math.exp(vector[i] - maxVal);
+            sum += vector[i];
         }
 
         // 正規化
         for (int i = 0; i < vector.length; i++) {
-            result[i] /= sum;
+            vector[i] /= sum;
+        }
+
+        return;
+    }
+
+    /**
+     * softmax関数の勾配計算
+     *
+     * @param d_softmax_input 　softmax関数への入力に関する勾配
+     * @param softmax_output  softmax関数の出力
+     * @return softmax関数の入力に関する勾配
+     */
+    public static double[] softmaxGradient(double[] d_softmax_input, double[] softmax_output) {
+        int n = softmax_output.length;
+        double[] d_input = new double[n];
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (i == j) {
+                    d_input[i] += softmax_output[i] * (1 - softmax_output[i]) * d_softmax_input[j];
+                } else {
+                    d_input[i] += -softmax_output[i] * softmax_output[j] * d_softmax_input[j];
+                }
+            }
+        }
+        return d_input;
+    }
+
+    //二次元配列版
+    public static double[][] softMax(double[][] input) {
+        int rows = input.length;
+        int cols = input[0].length;
+        double[][] result = new double[rows][cols];
+
+        for (int i = 0; i < rows; i++) {
+            double max = Arrays.stream(input[i]).max().orElse(1.0);
+            double[] exp = Arrays.stream(input[i]).map(x -> Math.exp(x - max)).toArray();
+            double sum = Arrays.stream(exp).sum();
+            result[i] = Arrays.stream(exp).map(x -> x / sum).toArray();
         }
 
         return result;
-    }
-
-    public static float calculateLoss(float[][] output, List<Integer> batchWordIds) {
-        //本来であれば、交差エントロピー誤差を用いるが、
-        //出力の次元と、教師データの形式が異なるため、今回は省略
-        return 0;
-    }
-
-    public static float[][] calculateGradients(float loss, float[][] output, List<Integer> batchWordIds) {
-        //本来であれば、誤差逆伝播法を用いて、各パラメータの勾配を計算するが、
-        //今回は省略
-        return null;
-    }
-
-    public static void updateParameters(float[][] gradients) {
-        //本来的には、勾配を用いて、重み行列、バイアス、埋め込み行列を更新する
-        //例：
-        //embeddingMatrix -= LEARNING_RATE * gradients;
-        //今回は省略
     }
 }

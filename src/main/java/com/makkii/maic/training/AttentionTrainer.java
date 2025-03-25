@@ -15,7 +15,7 @@
 //     *                          [バッチサイズ][レイヤー][コンテキスト長][コンテキスト長][次元数]
 //     * @param learningRate      学習率
 //     */
-//    public void train(float[][][] inputEmbeddings, float[][][][] attentionGradients, float learningRate) {
+//    public void train(double[][][] inputEmbeddings, double[][][][] attentionGradients, double learningRate) {
 //        int batchSize = inputEmbeddings.length;
 //        //int contextLength = inputEmbeddings[0].length; //コンテキストの長さ。train()の外で計算して渡した方が良い
 //
@@ -23,9 +23,9 @@
 //            for (int l = 0; l < LAYERS; l++) { // レイヤーごとに処理
 //                // 勾配から、重み行列の勾配を計算する部分。
 //                // (本来、Attentionの計算中に求めておくべきだが、簡略化のため)
-//                float[][] gradientsQ = calculateGradientForQ(attentionGradients[b][l]);
-//                float[][] gradientsK = calculateGradientForK(attentionGradients[b][l]);
-//                float[][] gradientsV = calculateGradientForV(attentionGradients[b][l]);
+//                double[][] gradientsQ = calculateGradientForQ(attentionGradients[b][l]);
+//                double[][] gradientsK = calculateGradientForK(attentionGradients[b][l]);
+//                double[][] gradientsV = calculateGradientForV(attentionGradients[b][l]);
 //
 //
 //                // 重み行列 Q, K, V の更新 (inputEmbeddings はここでは使わない)
@@ -45,10 +45,10 @@
 //     * @param attentionGradients
 //     * @return
 //     */
-//    private float[][] calculateGradientForQ(float[][][] attentionGradients) {
+//    private double[][] calculateGradientForQ(double[][][] attentionGradients) {
 //        // attentionGradients[コンテキスト長][コンテキスト長][次元数]
 //        // の最初のコンテキスト長のみ合計する
-//        float[][] gradientsQ = new float[DIMENSION][K_Q_DIMENTION];
+//        double[][] gradientsQ = new double[DIMENSION][K_Q_DIMENTION];
 //        int contextLength = attentionGradients.length;
 //
 //        // ここでは単純な合計で勾配を近似 (本来はもっと複雑)
@@ -68,8 +68,8 @@
 //     * @param attentionGradients
 //     * @return
 //     */
-//    private float[][] calculateGradientForK(float[][][] attentionGradients) {
-//        float[][] gradientsK = new float[dimension][kqDimension];
+//    private double[][] calculateGradientForK(double[][][] attentionGradients) {
+//        double[][] gradientsK = new double[dimension][kqDimension];
 //        int contextLength = attentionGradients.length;
 //        for (int i = 0; i < contextLength; i++) {
 //            for (int j = 0; j < contextLength; j++) {
@@ -86,8 +86,8 @@
 //     * @param attentionGradients
 //     * @return
 //     */
-//    private float[][] calculateGradientForV(float[][][] attentionGradients) {
-//        float[][] gradientsV = new float[dimension][kqDimension];
+//    private double[][] calculateGradientForV(double[][][] attentionGradients) {
+//        double[][] gradientsV = new double[dimension][kqDimension];
 //        int contextLength = attentionGradients.length;
 //        for (int i = 0; i < contextLength; i++) {
 //            for (int j = 0; j < contextLength; j++) {
@@ -105,7 +105,7 @@
 //     * @param layer レイヤー番号
 //     * @return 重み行列Q
 //     */
-//    public float[][] getWeightsQ(int layer) {
+//    public double[][] getWeightsQ(int layer) {
 //        return attentionWeightsQ[layer];
 //    }
 //
@@ -115,7 +115,7 @@
 //     * @param layer レイヤー番号
 //     * @return 重み行列K
 //     */
-//    public float[][] getWeightsK(int layer) {
+//    public double[][] getWeightsK(int layer) {
 //        return attentionWeightsK[layer];
 //    }
 //
@@ -125,7 +125,7 @@
 //     * @param layer レイヤー番号
 //     * @return 重み行列V
 //     */
-//    public float[][] getWeightsV(int layer) {
+//    public double[][] getWeightsV(int layer) {
 //        return attentionWeightsV[layer];
 //    }
 //
@@ -137,7 +137,7 @@
 //     */
 //    public void save(String filePath) throws IOException {
 //        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
-//            oos.writeObject(new float[][][][]{attentionWeightsQ, attentionWeightsK, attentionWeightsV}); //まとめて保存
+//            oos.writeObject(new double[][][][]{attentionWeightsQ, attentionWeightsK, attentionWeightsV}); //まとめて保存
 //        }
 //    }
 //
@@ -150,7 +150,7 @@
 //     */
 //    public void load(String filePath) throws IOException, ClassNotFoundException {
 //        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
-//            float[][][][] weights = (float[][][][]) ois.readObject();
+//            double[][][][] weights = (double[][][][]) ois.readObject();
 //            attentionWeightsQ = weights[0];
 //            attentionWeightsK = weights[1];
 //            attentionWeightsV = weights[2];
@@ -163,7 +163,7 @@
 //     * @param layer
 //     * @param weights
 //     */
-//    public void setAttentionWeights(String type, int layer, float[][] weights) {
+//    public void setAttentionWeights(String type, int layer, double[][] weights) {
 //        switch (type) {
 //            case "Q":
 //                if (weights.length != dimension || weights[0].length != kqDimension) {
@@ -193,9 +193,9 @@
 //     * @param layer
 //     * @return
 //     */
-//    public float[][] getAttentionWeights(String type, int layer) {
-//        float[][] result = new float[dimension][kqDimension];
-//        float[][][] target;
+//    public double[][] getAttentionWeights(String type, int layer) {
+//        double[][] result = new double[dimension][kqDimension];
+//        double[][][] target;
 //        switch (type) {
 //            case "Q":
 //                target = attentionWeightsQ;
@@ -231,17 +231,17 @@
 //        trainer.initialize();
 //
 //        // ダミーデータの作成 (本来はAttentionの計算結果と、そこからの逆伝播で得られた勾配)
-//        float[][][] inputEmbeddings = new float[1][1][dimension]; // バッチサイズ1, コンテキスト長1
-//        float[][][][] attentionGradients = new float[1][layers][1][1][dimension]; // バッチサイズ1
+//        double[][][] inputEmbeddings = new double[1][1][dimension]; // バッチサイズ1, コンテキスト長1
+//        double[][][][] attentionGradients = new double[1][layers][1][1][dimension]; // バッチサイズ1
 //
 //        // 学習率
-//        float learningRate = 0.001f;
+//        double learningRate = 0.001f;
 //
 //        // 学習の実行例
 //        trainer.train(inputEmbeddings, attentionGradients, learningRate);
 //
 //        // 重み行列の一部を出力
-//        float[][] qWeights = trainer.getWeightsQ(0); // 0番目のレイヤーのQ重み
+//        double[][] qWeights = trainer.getWeightsQ(0); // 0番目のレイヤーのQ重み
 //        for(int i=0; i<10; ++i){
 //            System.out.println(qWeights[0][i] + " ");
 //        }

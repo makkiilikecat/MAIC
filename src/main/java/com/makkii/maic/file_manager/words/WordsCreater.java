@@ -6,15 +6,23 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.makkii.maic.AIParams.MAX_WORD_SIZE;
+import static com.makkii.maic.file_manager.SentenceLabeler.WHITESPACE_PATTERN;
 import static org.bukkit.Bukkit.getLogger;
 
-public enum WordsCreater {
-    ;
+public class WordsCreater {
 
+
+    /*
+     * ai_basedata.xmlをベースにai_words.txtを作成する。
+     * R5 7500F、他のタスクつけっぱなしだと20秒かかる（約20万語彙）
+     * まだトークン化が適切に出来ていないため、語彙数が過度に増えてしまう
+     */
     public static void main() {
 
         /*try {  // 1. XMLファイルを文字列として読み込む
@@ -81,40 +89,8 @@ public enum WordsCreater {
             e.printStackTrace();
         }*/
         try {
-            // 1. XMLファイルを文字列として読み込む
-            //StringBuilder contentBuilder = new StringBuilder();
-            //try (BufferedReader br = new BufferedReader(new InputStreamReader(Files.newInputStream(FileManager.aiDatabaseFile.toPath()), StandardCharsets.UTF_8))) {
-            //    String sCurrentLine;
-            //    while ((sCurrentLine = br.readLine()) != null) {
-            //        contentBuilder.append(sCurrentLine).append("\n");
-            //    }
-            //}
-
-            // 2. 擬似的なルート要素で囲む
-            //String xmlContent = "<root>\n" + contentBuilder + "\n</root>";
-            //getLogger().info("[MAIC] " + xmlContent);
-
-            // 3. 文字列からDocumentオブジェクトを作成
-            //DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            //DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            //Document doc = dBuilder.parse(new ByteArrayInputStream(xmlContent.getBytes(StandardCharsets.UTF_8)));
-            //doc.getDocumentElement().normalize();
-
-            // 以降は元のコードと同じ（<doc>要素の処理）
-            //NodeList nList = doc.getElementsByTagName("doc");
-
-            //getLogger().info("[MAIC] " + FileManager.dataBaseNodeList.item(5).getTextContent());
-
+            int wordsCount = 0;
             Set<String> uniqueWords = new HashSet<>();
-
-            // 毎回インスタンス生成するとメモリ消費が増えるためここで生成
-            //StringBuilder title = new StringBuilder();
-            //StringBuilder content = new StringBuilder();
-            //String combinedText;
-            //Node nNode;
-            //Element eElement;
-            //int nListLength = nList.getLength();
-
             /*
             for (int temp = 0; temp < nListLength; temp++) {
 
@@ -144,15 +120,12 @@ public enum WordsCreater {
                 }
             }
             */
-
             getLogger().info("[MAIC] " + FileManager.databaseNodeLength + "件のページをトークン化中...");
 
-            int lastParcentage = 1;
             for (int temp = 0; temp < FileManager.databaseNodeLength; temp++) {
-                if ((int) (temp / FileManager.databaseNodeLength * 100) != lastParcentage) {
-                    lastParcentage = temp / FileManager.databaseNodeLength * 100;
+                if (temp % 1000 == 0) {
                     getLogger().info("[MAIC] 進捗: " +
-                            (int) (temp / FileManager.databaseNodeLength * 100) + "% " +
+                            (float) (temp / FileManager.databaseNodeLength * 100) + "% " +
                             temp + "/" + FileManager.databaseNodeLength);
                 }
 
@@ -162,9 +135,8 @@ public enum WordsCreater {
                     String title = eElement.getAttribute("title");
 
                     // StringBuilder を使用して combinedText を構築
-                    StringBuilder combinedText = new StringBuilder(title.length() + 1024); // content のおおよその長さを加える
+                    StringBuilder combinedText = new StringBuilder(title.length() + 100000); // content のおおよその長さを加える
                     combinedText.append(title);
-                    //combinedText.append('\n');
 
                     // content 内の不要な空白と改行を削除しながら combinedText に追加
                     NodeList children = eElement.getChildNodes();
@@ -172,61 +144,63 @@ public enum WordsCreater {
                         Node child = children.item(i);
                         if (child.getNodeType() == Node.TEXT_NODE) {
                             String textContent = child.getTextContent();
-                            // 連続する空白と改行を単一の改行に置き換える
-                            boolean lastWasNewline = false;
-                            for (char c : textContent.toCharArray()) {
-                                if (c == '\n') {
-                                    if (!lastWasNewline) {
-                                        combinedText.append('\n');
-                                        lastWasNewline = true;
-                                    }
-                                } else if (!Character.isWhitespace(c)) { //空白文字以外
-                                    combinedText.append(c);
-                                    lastWasNewline = false;
-                                }
+
+                            // 空白や改行を1つの半角空白に置き換える
+                            //combinedText = combinedText.append(WHITESPACE_PATTERN.matcher(textContent).replaceAll(" "));
+                            // 空白や改行を無くす
+                            String normalizedText = WHITESPACE_PATTERN.matcher(textContent).replaceAll("");
+                            if (!normalizedText.isEmpty()) {
+                                combinedText.append(normalizedText);
                             }
                         }
                     }
 
-                    int maxChunkSize = 1000000;
+                    // トークンの最大文字数制限
+                    int maxChunkSize = 20;
                     String chunkSplitText = combinedText.toString();
                     for (int i = 0; i < chunkSplitText.length(); i += maxChunkSize) {
-                        Collection<String> tokens = KuromojiTokenizer.tokenize(
+                        List<String> tokens = KuromojiTokenizer.tokenize(
                                 chunkSplitText.substring(i, Math.min(chunkSplitText.length(), i + maxChunkSize))
                         );
+
+                        // トークンで使われている文字全てを1文字で区切って追加（語彙サイズが小さい場合に未知語を減らす）
+                        for (String str : tokens) {
+                            for (char c : str.toCharArray()) {
+                                uniqueWords.add(String.valueOf(c));
+                            }
+                        }
                         uniqueWords.addAll(tokens);
                     }
-
-                    //明示的にGCを呼ぶ（非推奨だが、状況によっては有効な場合がある）
-                    combinedText = null; // combinedTextへの参照をなくす
                 }
             }
 
-            getLogger().info("[MAIC] トークン化が完了しました。文字数順に並べ替えています...");
-
-            List<String> sortedWords = uniqueWords.parallelStream()
-                    .sorted(Comparator.comparingInt(String::length))
-                    .collect(Collectors.toList());
-
-            getLogger().info("[MAIC] 並べ替えが終了しました。" + FileManager.AI_WORDS_FILE_NAME + "として保存しています...");
+            getLogger().info("[MAIC] トークン化が終了しました。" + FileManager.AI_WORDS_FILE_NAME + "として保存しています...");
 
             try (PrintWriter writer = new PrintWriter(FileManager.ai_WordsFile, "UTF-8")) {
                 // 不要な要素のセットを作成
                 Set<String> unwantedChars = new HashSet<>(
-                        Arrays.asList(" ", "　", "\n", "\r", "\t", "\\n", "\\r", "\\t")
+                        Arrays.asList(",", " ", "　", "\n", "\r", "\t", "\\n", "\\r", "\\t", " ")
+                        //Arrays.asList(",")
                 ); // 全角空白、CR, LF, タブ
 
-                // HashSet から不要な要素を削除
-                sortedWords.remove(unwantedChars);
-                sortedWords.remove(",");    // 区切り文字なので削除
+                // 不要な文字を削除、文字数が0の要素も削除
+                uniqueWords = uniqueWords.stream()
+                        .map(word -> word.chars()
+                                .filter(c -> !unwantedChars.contains((char) c))
+                                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                                .toString())
+                        .filter(s -> !s.isEmpty())  // 空文字列を削除
+                        .collect(Collectors.toSet());
 
-                // String.join() で結合した後、replaceAll() で不要な文字を削除
-                String result = String.join(",", sortedWords)
-                        //[]で囲むことですべての不要文字に対してor条件でマッチング
-                        .replaceAll("[" + String.join("", unwantedChars) + "]", "");
-                //.replaceAll(String.join("", unwantedChars), "");
+                // 文字数順にソート
+                List<String> sortedWords = uniqueWords.parallelStream()
+                        .sorted(Comparator.comparingInt(String::length))
+                        .collect(Collectors.toList());
 
-                writer.print(sortedWords); // println() ではなく print() を使用. println()だと最後に改行が入ってしまう。
+                // 短い文字列順に、語彙数を制限（長い固有名詞を含みにくくするため）
+                String output = String.join(",", sortedWords.subList(0, Math.min(sortedWords.size(), MAX_WORD_SIZE)));
+                writer.print(output);
+
             } catch (FileNotFoundException e) {
                 System.err.println("Error writing to ai_words.txt: " + e.getMessage());
             }

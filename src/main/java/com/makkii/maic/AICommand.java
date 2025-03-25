@@ -1,13 +1,14 @@
 package com.makkii.maic;
 
+import com.makkii.maic.file_manager.SentenceLabeler;
+import com.makkii.maic.file_manager.words.WordsLoader;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class AICommand implements CommandExecutor {
 
@@ -19,8 +20,8 @@ public class AICommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
         UUID senderUUID;
-        if (!(sender instanceof Player)) {
-            senderUUID = ((Player) sender).getPlayer().getUniqueId();
+        if (sender instanceof Player) {
+            senderUUID = ((Player) sender).getUniqueId();
         } else {
             senderUUID = CONSOLEUUID;
         }
@@ -46,28 +47,26 @@ public class AICommand implements CommandExecutor {
             sender.sendMessage("§cプロンプトを入力してください: /ai <プロンプト>");
             return true;
         }
-        String prompt = String.join(" ", args);
+        String prompt = SentenceLabeler.WHITESPACE_PATTERN.matcher(String.join("", args).toLowerCase()).replaceAll("");
+        sender.sendMessage("prompt: " + prompt);
 
         // 最後のコマンド実行時間を記録
         lastCommandTime.put(senderUUID, System.currentTimeMillis());
 
-        // 非同期で推論処理を実行
-        //CompletableFuture<String> futureResponse = CompletableFuture.supplyAsync(() -> {
-        //    String[] tokens = KuromojiTokenizer.tokenize(prompt);
-        //    return TextGenerator.generateText(tokens, senderUUID);
-        //});
-
-        // 推論完了後にチャットに応答を送信
-        //futureResponse.thenAcceptAsync(response -> {
-        //    getServer().getScheduler().runTask(mainAI, () -> { // Bukkitのスケジューラを使用
-        //        sender.sendMessage("§aAI: §f" + response);
-        //        // 完了したら、推論中フラグをfalseにする (TransformerクラスにremoveGeneratingPlayerメソッドを後で追加)
-        //        MainAI.setGeneratingFlag(senderUUID, false);
-        //    });
-        //});
-
         // 推論開始メッセージを送信
         sender.sendMessage("§aAIが応答を生成中です...");
+
+        ArrayList<String> tokens = KuromojiTokenizer.promptTokenize(prompt);
+        List<Integer> tokenIndices = WordsLoader.convertToIndexList(tokens);
+        tokenIndices = tokenIndices.stream()
+                .filter(index -> index != -1)
+                .collect(Collectors.toList());
+
+        sender.sendMessage("tokendWord: " + WordsLoader.convertToWordList(tokenIndices));
+        double[] response = TextGenerator.generateText(tokenIndices, senderUUID);
+        String responseText = WordsLoader.getWord(TextGenerator.arraysToWordId(response));
+        sender.sendMessage("response: " + responseText);
+
 
         return true;
     }

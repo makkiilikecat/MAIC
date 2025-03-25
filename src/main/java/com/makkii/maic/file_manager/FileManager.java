@@ -74,17 +74,17 @@ public enum FileManager {
 
 
         getLogger().info("[MAIC] フォルダ名一覧\n" +
-        "     ---------------------------------------------------------\n" +
-        "     | PluginDataFolder   Exists: " + mainAI.getDataFolder().exists() + ", " + mainAI.getDataFolder() + "\n" +
-        "     | DatabaseFileName   Exists: " + aiBaseDataFile.exists() + ", " + AI_BASEDATA_FILE_NAME + "\n" +
-        "     | WordsFileName      Exists: " + ai_WordsFile.exists() + ", " + AI_WORDS_FILE_NAME + "\n" +
-        "     | Q_VectorsFileName  Exists: " + ai_Q_VectorsFile.exists() + ", " + AI_Q_VECTORS_FILE_NAME + "\n" +
-        "     | K_VectorsFileName  Exists: " + ai_K_VectorsFile.exists() + ", " + AI_K_VECTORS_FILE_NAME + "\n" +
-        "     | V_VectorsFileName  Exists: " + ai_V_VectorsFile.exists() + ", " + AI_V_VECTORS_FILE_NAME + "\n" +
-        "     ---------------------------------------------------------");
+                "---------------------------------------------------------\n" +
+                "| PluginDataFolder   Exists: " + mainAI.getDataFolder().exists() + ", " + mainAI.getDataFolder() + "\n" +
+                "| DatabaseFileName   Exists: " + aiBaseDataFile.exists() + ", " + AI_BASEDATA_FILE_NAME + "\n" +
+                "| WordsFileName      Exists: " + ai_WordsFile.exists() + ", " + AI_WORDS_FILE_NAME + "\n" +
+                "| Q_VectorsFileName  Exists: " + ai_Q_VectorsFile.exists() + ", " + AI_Q_VECTORS_FILE_NAME + "\n" +
+                "| K_VectorsFileName  Exists: " + ai_K_VectorsFile.exists() + ", " + AI_K_VECTORS_FILE_NAME + "\n" +
+                "| V_VectorsFileName  Exists: " + ai_V_VectorsFile.exists() + ", " + AI_V_VECTORS_FILE_NAME + "\n" +
+                "---------------------------------------------------------");
 
 
-        if (requireWordsFile || require_Q_VectorsFile || require_K_VectorsFile || require_V_VectorsFile) {
+        if (requireWordsFile || require_Q_VectorsFile || require_K_VectorsFile || require_V_VectorsFile || true) {
             getLogger().info("[MAIC] トレーニングのために、" + AI_BASEDATA_FILE_NAME + "をロードしています。");
 
             // データのロード
